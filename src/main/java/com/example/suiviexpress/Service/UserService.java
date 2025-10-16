@@ -8,6 +8,7 @@ import com.example.suiviexpress.DTO.RegisterRequest;
 import com.example.suiviexpress.Entity.Role;
 import com.example.suiviexpress.Entity.User;
 import com.example.suiviexpress.Repository.UserRepository;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -94,7 +95,98 @@ public class UserService {
 
     // ✅ Delete user
     public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new RuntimeException("User not found");
+        }
         userRepository.deleteById(id);
+    }
+    // ✅ Enable / Disable user account
+    public User setUserEnabled(Long id, boolean enabled) {
+        User user = getUserById(id);
+        user.setEnabled(enabled);
+        user.setUpdatedAt(LocalDateTime.now());
+        return userRepository.save(user);
+    }
+
+    // ✅ Lock / Unlock user account
+    public User setUserLocked(Long id, boolean locked) {
+        User user = getUserById(id);
+        user.setLocked(locked);
+        user.setUpdatedAt(LocalDateTime.now());
+        return userRepository.save(user);
+    }
+
+    // ✅ Update user info (name, email, etc.)
+    public User updateUser(Long id, User updatedUser) {
+        User existingUser = getUserById(id);
+
+        if (updatedUser.getUsername() != null) existingUser.setUsername(updatedUser.getUsername());
+        if (updatedUser.getEmail() != null) existingUser.setEmail(updatedUser.getEmail());
+        if (updatedUser.getPhone() != null) existingUser.setPhone(updatedUser.getPhone());
+        if (updatedUser.getRole() != null) {
+            try {
+                Role.valueOf(updatedUser.getRole().name());
+                existingUser.setRole(updatedUser.getRole());
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Invalid role value: " + updatedUser.getRole());
+            }
+        }
+        if (updatedUser.getFirstName() != null) existingUser.setFirstName(updatedUser.getFirstName());
+        if (updatedUser.getLastName() != null) existingUser.setLastName(updatedUser.getLastName());
+        if (updatedUser.getAddress() != null) existingUser.setAddress(updatedUser.getAddress());
+        if (updatedUser.getPassword() != null) existingUser.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
+
+        existingUser.setUpdatedAt(LocalDateTime.now());
+
+        return userRepository.save(existingUser);
+    }
+
+
+
+
+
+    // 🔒 Generic method to get the current authenticated user
+    private User getCurrentUser(Authentication authentication) {
+        if (authentication == null) {
+            throw new RuntimeException("Unauthorized: Authentication missing");
+        }
+
+        User currentUser = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("Current user not found"));
+
+        // 🚫 Prevent any action if the account is locked
+        if (currentUser.isLocked()) {
+            throw new RuntimeException("Account locked. Access denied.");
+        }
+
+        return currentUser;
+    }
+
+
+    // 🔒 Verify admin access
+    public void verifyAdminAccess(Authentication authentication) {
+        User currentUser = getCurrentUser(authentication);
+        if (!currentUser.getRole().equals(Role.ROLE_ADMIN)) {
+            throw new RuntimeException("Access denied: Admins only");
+        }
+    }
+
+
+    // 🔒 Verify admin access
+    public void verifyStuffOrAdminAccess(Authentication authentication) {
+        User currentUser = getCurrentUser(authentication);
+        if (!currentUser.getRole().equals(Role.ROLE_STUFF) && !currentUser.getRole().equals(Role.ROLE_ADMIN) ) {
+            throw new RuntimeException("Access denied: Admins Or Stuff only");
+        }
+    }
+
+    // 🔒 Verify admin or self access
+    public void verifyAdminOrSelf(Authentication authentication, Long targetUserId) {
+        User currentUser = getCurrentUser(authentication);
+
+        if (!currentUser.getRole().equals(Role.ROLE_ADMIN) && !currentUser.getId().equals(targetUserId)) {
+            throw new RuntimeException("Access denied: insufficient permissions");
+        }
     }
 }
 

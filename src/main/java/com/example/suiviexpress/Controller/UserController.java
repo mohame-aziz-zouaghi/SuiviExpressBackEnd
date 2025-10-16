@@ -4,6 +4,7 @@ import com.example.suiviexpress.Entity.Role;
 import com.example.suiviexpress.Entity.User;
 import com.example.suiviexpress.Service.UserService;
 import com.example.suiviexpress.Config.JwtUtil;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,47 +23,51 @@ public class UserController {
         this.jwtUtil = jwtUtil;
     }
 
-    // ✅ Helper method to get user from JWT
-    private User getCurrentUser(HttpServletRequest request) {
-        String header = request.getHeader("Authorization");
-        if (header == null || !header.startsWith("Bearer ")) {
-            throw new RuntimeException("Missing or invalid Authorization header");
-        }
-        String token = header.substring(7);
-        if (!jwtUtil.validateToken(token)) {
-            throw new RuntimeException("Invalid token");
-        }
-        Long userId = jwtUtil.getUserIdFromToken(token);
-        return userService.getUserById(userId); // fetch fresh user from DB
-    }
-
-    // ✅ Get all users (admin only)
+    // ✅ Get all users (Admin only)
     @GetMapping
-    public List<User> getAllUsers(HttpServletRequest request) {
-        User currentUser = getCurrentUser(request);
-        if (currentUser.getRole() != Role.ROLE_ADMIN) {
-            throw new RuntimeException("Access denied: Admins only");
-        }
+    public List<User> getAllUsers(Authentication authentication) {
+        userService.verifyAdminAccess(authentication);
         return userService.getAllUsers();
     }
 
-    // ✅ Get single user by ID (admin or self)
+    // ✅ Get single user (Admin or owner)
     @GetMapping("/{id}")
-    public User getUser(@PathVariable Long id, HttpServletRequest request) {
-        User currentUser = getCurrentUser(request);
-        if (currentUser.getRole() != Role.ROLE_ADMIN && !currentUser.getId().equals(id)) {
-            throw new RuntimeException("Access denied");
-        }
+    public User getUser(@PathVariable Long id, Authentication authentication) {
+        userService.verifyAdminOrSelf(authentication, id);
         return userService.getUserById(id);
     }
 
-    // ✅ Delete user (admin only)
+    // ✅ Update user info (Admin or owner)
+    @PutMapping("/{id}")
+    public User updateUser(@PathVariable Long id,
+                           @RequestBody User updatedUser,
+                           Authentication authentication) {
+        userService.verifyAdminOrSelf(authentication, id);
+        return userService.updateUser(id, updatedUser);
+    }
+
+    // ✅ Enable or disable user account (Admin only)
+    @PutMapping("/{id}/enable")
+    public User setUserEnabled(@PathVariable Long id,
+                               @RequestParam boolean enabled,
+                               Authentication authentication) {
+        userService.verifyAdminAccess(authentication);
+        return userService.setUserEnabled(id, enabled);
+    }
+
+    // ✅ Lock or unlock user account (Admin only)
+    @PutMapping("/{id}/lock")
+    public User setUserLocked(@PathVariable Long id,
+                              @RequestParam boolean locked,
+                              Authentication authentication) {
+        userService.verifyAdminAccess(authentication);
+        return userService.setUserLocked(id, locked);
+    }
+
+    // ✅ Delete user (Admin only)
     @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable Long id, HttpServletRequest request) {
-        User currentUser = getCurrentUser(request);
-        if (currentUser.getRole() != Role.ROLE_ADMIN) {
-            throw new RuntimeException("Access denied: Admins only");
-        }
+    public void deleteUser(@PathVariable Long id, Authentication authentication) {
+        userService.verifyAdminAccess(authentication);
         userService.deleteUser(id);
     }
 }

@@ -27,6 +27,7 @@ public class User {
 
     @Column(nullable = false, unique = true, length = 150)
     private String firstName;
+
     @Column(nullable = false, unique = true, length = 150)
     private String lastName;
 
@@ -39,10 +40,13 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
     @Column(nullable = false)
-    private boolean enabled = true;
+    private boolean enabled = false;
+
     @Column(nullable = false)
     private boolean locked = false;
+
     @Column(nullable = false)
     private LocalDateTime createdAt=LocalDateTime.now();
 
