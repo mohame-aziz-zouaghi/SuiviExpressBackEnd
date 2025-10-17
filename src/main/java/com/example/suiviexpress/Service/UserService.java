@@ -44,6 +44,8 @@ public class UserService {
                 .lastName(request.getLastName())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.ROLE_USER)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .phone(request.getPhone())
                 .address(request.getAddress())
                 .enabled(true)

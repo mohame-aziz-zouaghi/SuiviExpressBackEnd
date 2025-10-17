@@ -26,35 +26,30 @@ public class ProductController {
     // ✅ Get all products
     @GetMapping
     public List<Product> getAllProducts(Authentication authentication) {
-        userService.verifyStuffOrAdminAccess(authentication);
         return productService.getAllProducts();
     }
 
     // ✅ Get by category
     @GetMapping("/category/{category}")
     public List<Product> getByCategory(@PathVariable ProductCategories category,Authentication authentication) {
-        userService.verifyStuffOrAdminAccess(authentication);
         return productService.getProductsByCategory(category);
     }
 
     // ✅ Get available products
     @GetMapping("/available")
     public List<Product> getAvailableProducts(Authentication authentication) {
-        userService.verifyStuffOrAdminAccess(authentication);
         return productService.getAvailableProducts();
     }
 
     // ✅ Search products by keyword
     @GetMapping("/search")
     public List<Product> searchProducts(@RequestParam String keyword,Authentication authentication) {
-        userService.verifyStuffOrAdminAccess(authentication);
         return productService.searchProducts(keyword);
     }
 
     // ✅ Filter products by price range
     @GetMapping("/filter")
     public List<Product> filterByPrice(@RequestParam Double min, @RequestParam Double max,Authentication authentication) {
-        userService.verifyStuffOrAdminAccess(authentication);
         return productService.filterByPrice(min, max);
     }
 
@@ -89,7 +84,6 @@ public class ProductController {
     // ✅ Get only visible products
     @GetMapping("/visible")
     public List<Product> getVisibleProducts(Authentication authentication) {
-        userService.verifyStuffOrAdminAccess(authentication);
         return productService.getVisibleProducts();
     }
 
