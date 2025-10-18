@@ -67,7 +67,7 @@ public class UserController {
     // ✅ Delete user (Admin only)
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable Long id, Authentication authentication) {
-        userService.verifyAdminAccess(authentication);
+        userService.verifyAdminOrSelf(authentication,id);
         userService.deleteUser(id);
     }
 }
