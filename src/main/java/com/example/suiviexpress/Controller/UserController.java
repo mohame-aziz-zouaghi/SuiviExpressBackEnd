@@ -1,14 +1,17 @@
 package com.example.suiviexpress.Controller;
 
+import com.example.suiviexpress.DTO.UserDTO;
 import com.example.suiviexpress.Entity.Role;
 import com.example.suiviexpress.Entity.User;
 import com.example.suiviexpress.Service.UserService;
 import com.example.suiviexpress.Config.JwtUtil;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -23,27 +26,39 @@ public class UserController {
         this.jwtUtil = jwtUtil;
     }
 
-    // ✅ Get all users (Admin only)
+    // -------------------- Get All Users --------------------
     @GetMapping
-    public List<User> getAllUsers(Authentication authentication) {
-        userService.verifyAdminAccess(authentication);
-        return userService.getAllUsers();
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        List<UserDTO> dtos = userService.getAllUsers()
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
-    // ✅ Get single user (Admin or owner)
-    @GetMapping("/{id}")
-    public User getUser(@PathVariable Long id, Authentication authentication) {
-        userService.verifyAdminOrSelf(authentication, id);
-        return userService.getUserById(id);
+    // -------------------- Get User by ID --------------------
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long userId) {
+        User user = userService.getUserById(userId); // returns User or null
+
+        if (user == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(toDTO(user));
     }
 
-    // ✅ Update user info (Admin or owner)
-    @PutMapping("/{id}")
-    public User updateUser(@PathVariable Long id,
-                           @RequestBody User updatedUser,
-                           Authentication authentication) {
-        userService.verifyAdminOrSelf(authentication, id);
-        return userService.updateUser(id, updatedUser);
+
+    // -------------------- Update User --------------------
+    @PutMapping("/{userId}")
+    public ResponseEntity<UserDTO> updateUser(
+            @PathVariable Long userId,
+            @RequestBody User updatedUser,
+            Authentication authentication
+    ) {
+        userService.verifyAdminOrSelf(authentication, userId);
+        User savedUser = userService.updateUser(userId, updatedUser);
+        return ResponseEntity.ok(toDTO(savedUser));
     }
 
     // ✅ Enable or disable user account (Admin only)
@@ -64,10 +79,31 @@ public class UserController {
         return userService.setUserLocked(id, locked);
     }
 
-    // ✅ Delete user (Admin only)
-    @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable Long id, Authentication authentication) {
-        userService.verifyAdminOrSelf(authentication,id);
-        userService.deleteUser(id);
+    // -------------------- Delete User --------------------
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<Void> deleteUser(
+            @PathVariable Long userId,
+            Authentication authentication
+    ) {
+        userService.verifyAdminOrSelf(authentication, userId);
+        userService.deleteUser(userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // -------------------- Helper Method --------------------
+    private UserDTO toDTO(User user) {
+        return UserDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .phone(user.getPhone())
+                .address(user.getAddress())
+                .profileImageUrl(user.getProfileImageUrl())
+                .role(user.getRole())
+                .enabled(user.isEnabled())
+                .locked(user.isLocked())
+                .build();
     }
 }
