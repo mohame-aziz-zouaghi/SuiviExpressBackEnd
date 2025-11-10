@@ -31,7 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
-# Application properties
+
 # Application properties
 src/main/resources/application.properties
 src/main/resources/application-*.properties
@@ -47,6 +47,6 @@ src/main/resources/application-*.properties
 *.p12
 *.jks
 
-# Stripe
+# Stripe files
 *stripe*
 *secret*
