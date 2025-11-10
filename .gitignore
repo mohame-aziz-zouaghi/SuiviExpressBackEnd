@@ -31,3 +31,22 @@ build/
 
 ### VS Code ###
 .vscode/
+# Application properties
+# Application properties
+src/main/resources/application.properties
+src/main/resources/application-*.properties
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Keys and secrets
+*.key
+*.pem
+*.p12
+*.jks
+
+# Stripe
+*stripe*
+*secret*

@@ -7,9 +7,12 @@ import com.example.suiviexpress.Service.ProductService;
 import com.example.suiviexpress.Service.UserService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import lombok.*;
+
 
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 @RestController
 @RequestMapping("/api/products")
